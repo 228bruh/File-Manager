@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <string>
 #include <dirent.h>
 #include <sys/stat.h>
 #include <termios.h>
@@ -15,12 +16,10 @@ public:
 };
 
 Item::Type getFileType(const std::string& name) {
-    // Получаем расширение файла
     std::size_t pos = name.find_last_of('.');
     if (pos != std::string::npos) {
         std::string extension = name.substr(pos + 1);
 
-        // Определяем тип файла на основе расширения
         if (extension == "jpg" || extension == "jpeg" || extension == "png" || extension == "gif" || extension == "bmp") {
             return Item::Type::Image;
         } else if (extension == "mp3" || extension == "wav" || extension == "flac" || extension == "aac") {
@@ -33,7 +32,6 @@ Item::Type getFileType(const std::string& name) {
             return Item::Type::Document;
         }
     }
-    // Если расширение не соответствует известным типам, возвращаем "другое"
     return Item::Type::Other;
 }
 
@@ -45,13 +43,13 @@ std::vector<Item> set_list_of_current_dir(std::string start_dir) {
     if ((dir = opendir(start_dir.c_str())) != nullptr) {
         while ((ent = readdir(dir)) != nullptr) {
             const char* name = ent->d_name;
-            if (name[0] != '.') { // not hidden file
+            if (name[0] != '.') { 
                 Item item;
                 item.name = name;
                 std::string full_path = start_dir + "/" + name;
                 if (stat(full_path.c_str(), &st) == 0) {
                     item.is_folder = S_ISDIR(st.st_mode);
-                    item.size = st.st_size / (1024.0 * 1024.0); // in MB
+                    item.size = st.st_size / (1024.0 * 1024.0);
                     if (item.is_folder) {
                         item.type = Item::Type::Folder;
                     } else {
@@ -128,9 +126,7 @@ void displayFiles(const std::vector<Item>& items, int currentItem) {
 }
 
 int main() {
-    std::string start_dir;
-    std::cout << "Enter starting directory: ";
-    std::cin >> start_dir;
+    std::string start_dir = "/"; 
     std::vector<Item> items = set_list_of_current_dir(start_dir);
 
     int currentSelection = 0;
@@ -145,27 +141,55 @@ int main() {
 
     char input;
     while (read(STDIN_FILENO, &input, 1) == 1) {
-        if (input == '\033') { // First character of escape sequence
-            read(STDIN_FILENO, &input, 1); // Skip '['
+        if (input == '\033') { // Первый символ последовательности ESC
+            read(STDIN_FILENO, &input, 1); // Пропускаем '['
             read(STDIN_FILENO, &input, 1);
             switch (input) {
-                case 'A': // Up arrow key
+                case 'A': 
                     currentSelection = (currentSelection == 0) ? items.size() - 1 : currentSelection - 1;
                     break;
-                case 'B': // Down arrow key
+                case 'B': 
                     currentSelection = (currentSelection + 1) % items.size();
                     break;
             }
             displayFiles(items, currentSelection);
         }
-        if (input == 'q') { // Quit program
+        if (input == 'q') { 
             break;
+        }   
+        if (input == '\n') { 
+            if (items[currentSelection].is_folder) { 
+                start_dir += "/" + items[currentSelection].name;
+                items = set_list_of_current_dir(start_dir); 
+                currentSelection = 0; 
+                displayFiles(items, currentSelection);
+            }
         }
+        if (input == 127) { // Backspace
+            if(start_dir != "/" && start_dir != "/home") {
+                size_t pos = start_dir.find_last_of('/');
+                if (pos != std::string::npos) { // Удаление последней части строки, если символ найден
+                    start_dir = start_dir.substr(0, pos);
+                    // Обновление списка файлов и папок для предыдущей директории
+                    items = set_list_of_current_dir(start_dir); 
+                    currentSelection = 0; 
+                    displayFiles(items, currentSelection);
+                }
+            } else {
+                start_dir = "/";
+                items = set_list_of_current_dir(start_dir); 
+                currentSelection = 0; 
+                displayFiles(items, currentSelection);
+            }
+
+        }
+
     }
 
     tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
     return 0;
 }
+
 
 
 
