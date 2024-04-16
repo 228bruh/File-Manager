@@ -27,7 +27,7 @@ Item::Type getFileType(const std::string& name) {
             return Item::Type::Audio;
         } else if (extension == "mp4" || extension == "avi" || extension == "mkv" || extension == "mov") {
             return Item::Type::Video;
-        } else if (extension == "zip" || extension == "rar" || extension == "tar" || extension == "gz") {
+        } else if (extension == "zip" || extension == "rar" || extension == "tar" || extension == "gz" || extension == "jar") {
             return Item::Type::Archive;
         } else if (extension == "txt" || extension == "pdf" || extension == "doc" || extension == "docx") {
             return Item::Type::Document;
@@ -71,10 +71,11 @@ bool compareItemsByName(const Item& a, const Item& b) {
     return a.name < b.name;
 }
 
-void start_menu();
+void start_screen();
 
 void displayFiles(const std::vector<Item>& items, int currentItem) {
     std::cout << "\033c";
+
     for (size_t i = 0; i < items.size(); ++i) {
         if (i == currentItem) {
             std::string type_str;
@@ -132,8 +133,40 @@ void displayFiles(const std::vector<Item>& items, int currentItem) {
     }
 }
 
+bool removeFileOrDirectory(const std::string& path, bool is_folder) {
+    if (is_folder) {
+        if (rmdir(path.c_str()) != 0) {
+            std::cerr << "Error removing directory: " << path << std::endl;
+            return false;
+        }
+    } else {
+        if (unlink(path.c_str()) != 0) {
+            std::cerr << "Error removing file: " << path << std::endl;
+            return false;
+        }
+    }
+    return true;
+}
+
+void confirmAndDelete(const std::string& path, bool is_folder) {
+    std::cout << "\nAre you sure you want to delete this item: |" << path << "|? (y/n)\n";
+    char response;
+    std::cin >> response;
+    if (response == 'y' || response == 'Y') {
+        if (removeFileOrDirectory(path, is_folder)) {
+            std::cout << "Item successfully deleted.\n";
+        } else {
+            std::cout << "Failed to delete item.\n";
+        }
+    } else {
+        std::cout << "Deletion canceled.\n";
+    }
+    std::cout << "\nPress any key to continue: ";
+    std::cin.ignore();
+}
+
 int main() {
-    start_menu();
+    start_screen();
 
     std::string start_dir = "/home";
     std::vector<Item> items = set_list_of_current_dir(start_dir);
@@ -150,7 +183,8 @@ int main() {
 
     char input;
     while (read(STDIN_FILENO, &input, 1) == 1) {
-        if (input == '\033') { // arrows
+
+        if (!items.empty() && input == '\033') {  // arrows
             read(STDIN_FILENO, &input, 1); 
             read(STDIN_FILENO, &input, 1);
             switch (input) {
@@ -163,19 +197,27 @@ int main() {
             }
             displayFiles(items, currentSelection);
         }
-        if (input == 'q') { // quit
+
+        else if (input == 'q') { // quit
             break;
-        }   
-        if (input == '\n') { // Enter
-            if (items[currentSelection].is_folder) { 
+        }
+
+        else if (input == '\n') { // Enter
+            if (!items.empty() && items[currentSelection].is_folder) { 
                 start_dir += "/" + items[currentSelection].name;
                 items = set_list_of_current_dir(start_dir); 
+                if (items.empty()) {
+                    std::cout << "\033c";
+                    std::cout << "This folder is empty\n";
+                } else {
                 currentSelection = 0; 
                 displayFiles(items, currentSelection);
+                }
             }
         }
-        if (input == 127) { // Backspace
-            if(start_dir != "/" && start_dir != "/home") {
+
+        else if (input == 127) { // Backspace
+            if (start_dir != "/" && start_dir != "/home") {
                 size_t pos = start_dir.find_last_of('/');
                 if (pos != std::string::npos) {
                     start_dir = start_dir.substr(0, pos);
@@ -191,10 +233,45 @@ int main() {
             }
 
         }
-        if (input == 's') {
+
+        else if (!items.empty() && input == 's') { // 's' for SORT by name
             std::sort(items.begin(), items.end(), compareItemsByName);
             displayFiles(items, currentSelection);
         }
+
+        else if (!items.empty() && input == '+') { // create folder or file in current dir 
+            
+        }
+
+        else if (!items.empty() && input == '-') { // delete folder or file
+            if (items[currentSelection].is_folder) {
+                std::string path = start_dir + "/" + items[currentSelection].name;
+                confirmAndDelete(path, true);
+            } else {
+                std::string path = start_dir + "/" + items[currentSelection].name;
+                confirmAndDelete(path, false);
+            }
+            items = set_list_of_current_dir(start_dir); 
+            currentSelection = 0; 
+            if (items.empty()) {
+                if (start_dir != "/" && start_dir != "/home") {
+                    size_t pos = start_dir.find_last_of('/');
+                    if (pos != std::string::npos) {
+                        start_dir = start_dir.substr(0, pos);
+                        items = set_list_of_current_dir(start_dir); 
+                        currentSelection = 0; 
+                        displayFiles(items, currentSelection);
+                    }
+                } else {
+                start_dir = "/";
+                items = set_list_of_current_dir(start_dir); 
+                currentSelection = 0; 
+                displayFiles(items, currentSelection);
+                } 
+            }
+            displayFiles(items, currentSelection);
+        }
+
 
     }
 
@@ -202,7 +279,8 @@ int main() {
     return 0;
 }
 
-void start_menu() {
+void start_screen() {
+    std::cout << "Navigation\n";
     std::cout << "--------------------------------------\n";
     std::cout << "↓ ↑       |navigate through the items|\n";
     std::cout << "----------|--------------------------|\n";
@@ -212,11 +290,24 @@ void start_menu() {
     std::cout << "----------|--------------------------|\n";
     std::cout << "q         |quit                      |\n";
     std::cout << "--------------------------------------\n\n";
-    std::cout << "Press Enter for continue: ";
+    std::cout << "Edit\n";
+    std::cout << "--------------------------------------\n";
+    std::cout << "s         |sort current dir by name  |\n";
+    std::cout << "----------|--------------------------|\n";
+    std::cout << "-         |delete selected item      |\n";
+    std::cout << "--------------------------------------\n\n";
+    std::cout << "Press any key to continue: ";
     std::cin.ignore();
 }
 
 
+        // else if(input == 'r') {
+
+        // }
+
+        // else if(input == '?') {
+
+        // }
 
 
 
