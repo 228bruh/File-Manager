@@ -2,10 +2,13 @@
 #include <vector>
 #include <string>
 #include <algorithm>
+#include <fstream>
 #include <dirent.h>
 #include <sys/stat.h>
-#include <termios.h>
+#include <sys/types.h> // Для функций mkdir и mkfifo
+#include <fcntl.h> // Для функций open и close
 #include <unistd.h>
+#include <termios.h>
 
 class Item {
 public:
@@ -165,6 +168,14 @@ void confirmAndDelete(const std::string& path, bool is_folder) {
     std::cin.ignore();
 }
 
+void createItem(const std::string& path, bool isFolder) {
+    if (isFolder) {
+        mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    } else {
+        std::ofstream file(path);
+    }
+}
+
 int main() {
     start_screen();
 
@@ -239,8 +250,30 @@ int main() {
             displayFiles(items, currentSelection);
         }
 
-        else if (!items.empty() && input == '+') { // create folder or file in current dir 
-            
+        else if (input == '+') { // create item in curr dir 
+            std::cout << "\033c";
+            std::cout << "Create item in " << start_dir << "\n";
+            std::cout << "Enter name: ";
+            std::string itemName;
+            std::cin >> itemName;
+            std::string itemPath = start_dir + "/" + itemName;
+        
+            struct stat buffer;
+            while (stat(itemPath.c_str(), &buffer) == 0) {
+                std::cout << "\n\nItem with the same name already exists\n";
+                std::cout << "Enter name: ";
+                std::cin >> itemName;
+                itemPath = start_dir + "/" + itemName;
+                if (stat(itemPath.c_str(), &buffer) != 0) {
+                    break;
+                }
+            }
+
+            bool isFolder = (itemName.find('.') == std::string::npos); 
+            createItem(itemPath, isFolder); 
+            items = set_list_of_current_dir(start_dir);
+            currentSelection = 0;
+            displayFiles(items, currentSelection);
         }
 
         else if (!items.empty() && input == '-') { // delete folder or file
@@ -272,12 +305,12 @@ int main() {
             displayFiles(items, currentSelection);
         }
 
-
     }
 
     tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
     return 0;
 }
+
 
 void start_screen() {
     std::cout << "Navigation\n";
@@ -293,6 +326,8 @@ void start_screen() {
     std::cout << "Edit\n";
     std::cout << "--------------------------------------\n";
     std::cout << "s         |sort current dir by name  |\n";
+    std::cout << "----------|--------------------------|\n";
+    std::cout << "+         |create item in current dir|\n";
     std::cout << "----------|--------------------------|\n";
     std::cout << "-         |delete selected item      |\n";
     std::cout << "--------------------------------------\n\n";
