@@ -5,8 +5,8 @@
 #include <fstream>
 #include <dirent.h>
 #include <sys/stat.h>
-#include <sys/types.h> // Для функций mkdir и mkfifo
-#include <fcntl.h> // Для функций open и close
+#include <sys/types.h>
+#include <fcntl.h> 
 #include <unistd.h>
 #include <termios.h>
 
@@ -260,7 +260,7 @@ int main() {
         
             struct stat buffer;
             while (stat(itemPath.c_str(), &buffer) == 0) {
-                std::cout << "\n\nItem with the same name already exists\n";
+                std::cout << "\n\nItem with the same name '" << itemName << "' already exists in this directory\n";
                 std::cout << "Enter name: ";
                 std::cin >> itemName;
                 itemPath = start_dir + "/" + itemName;
@@ -305,6 +305,42 @@ int main() {
             displayFiles(items, currentSelection);
         }
 
+        else if (!items.empty() && input == 'r') { // rename
+            std::cout << "\033c";
+            std::cout << "Rename this item: '" << items[currentSelection].name << "'\n";
+            std::cout << "Enter new name: ";
+            std::string newName;
+            std::cin >> newName;
+            std::string newPath = start_dir + "/" + newName;
+            
+            struct stat buffer;
+            while (stat(newPath.c_str(), &buffer) == 0) {
+                std::cout << "\n\nItem with the name '" << newName << "' already exists in this directory\n";
+                std::cout << "Enter new name: ";
+                std::cin >> newName;
+                newPath = start_dir + "/" + newName;
+                if (stat(newPath.c_str(), &buffer) != 0) {
+                    break;
+                }
+            }
+
+            Item& currentItem = items[currentSelection];
+            std::string oldPath = start_dir + "/" + currentItem.name;
+            rename(oldPath.c_str(), newPath.c_str());
+            items = set_list_of_current_dir(start_dir);
+            currentSelection = 0;
+            displayFiles(items, currentSelection);
+            
+        }
+
+        else if (!items.empty() && input == 'c') { //copy
+
+        }
+
+        else if (input == 'v') { // paste
+            
+        }
+
     }
 
     tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
@@ -330,19 +366,18 @@ void start_screen() {
     std::cout << "+         |create item in current dir|\n";
     std::cout << "----------|--------------------------|\n";
     std::cout << "-         |delete selected item      |\n";
+    std::cout << "----------|--------------------------|\n";
+    std::cout << "r         |rename selected item      |\n";
     std::cout << "--------------------------------------\n\n";
     std::cout << "Press any key to continue: ";
     std::cin.ignore();
 }
 
+// copy 
 
-        // else if(input == 'r') {
+// paste
 
-        // }
-
-        // else if(input == '?') {
-
-        // }
+// search
 
 
 
