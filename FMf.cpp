@@ -3,6 +3,7 @@
 #include <string>
 #include <algorithm>
 #include <fstream>
+#include <cstring>
 #include <dirent.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -58,7 +59,7 @@ std::vector<Item> set_list_of_current_dir(std::string start_dir) {
                 std::string full_path = start_dir + "/" + name;
                 if (stat(full_path.c_str(), &st) == 0) {
                     item.is_folder = S_ISDIR(st.st_mode);
-                    item.size = st.st_size / (1024.0 * 1024.0);
+                    item.size = st.st_size / (1000.0 * 1000.0);
                     if (item.is_folder) {
                         item.type = Item::Type::Folder;
                     } else {
@@ -112,7 +113,7 @@ void displayFiles(const std::vector<Item>& items, int currentItem, std::string c
             std::cout << "-> ";
             std::cout << std::setw(35) << std::left << items[i].name;
             std::cout << std::setw(10) << std::left << type_str;
-            std::cout << std::setw(10) << std::left << items[i].size << " MB\n" << "\033[0m";
+            std::cout << std::setw(5) << std::left << items[i].size << " MB\n" << "\033[0m";
         } else {
             std::string type_str;
             switch (items[i].type) {
@@ -141,7 +142,7 @@ void displayFiles(const std::vector<Item>& items, int currentItem, std::string c
             std::cout << "   ";
             std::cout << std::setw(35) << std::left << items[i].name;
             std::cout << std::setw(10) << std::left << type_str;
-            std::cout << std::setw(10) << std::left << items[i].size << " MB\n";
+            std::cout << std::setw(5) << std::left << items[i].size << " MB\n";
         }
     }
 
@@ -184,7 +185,8 @@ void confirmAndDelete(const std::string& path, bool is_folder) {
     } else {
         std::cout << "Deletion canceled.\n";
     }
-    std::cout << "\nPress any key to continue: ";
+
+    std::cout << "\nPress " << "\033[0;1m" << "any key" << "\033[0m" << " to continue: ";
     std::cin.ignore();
 }
 
@@ -194,6 +196,26 @@ void createItem(const std::string& path, bool isFolder) {
     } else {
         std::ofstream file(path);
     }
+}
+
+void searchFile(const char* dir_name, const std::string& item_name, std::vector<std::string>& results) {
+    DIR* dir = opendir(dir_name);
+    if (dir == nullptr) {
+        return;
+    }
+
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != nullptr) {
+        if (entry->d_name[0] != '.' && entry->d_type == DT_DIR && strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
+            std::string subdir_name = std::string(dir_name) + "/" + entry->d_name;
+            searchFile(subdir_name.c_str(), item_name, results);
+        } else if (entry->d_name[0] != '.' && entry->d_type == DT_REG && strcmp(entry->d_name, item_name.c_str()) == 0) {
+            std::string file_path = std::string(dir_name) + "/" + entry->d_name;
+            results.push_back(file_path);
+        }
+    }
+
+    closedir(dir);
 }
 
 int main() {
@@ -352,6 +374,9 @@ int main() {
 
             copiedItemPath = "";
             items = set_list_of_current_dir(start_dir);
+            if (items.size() == 1) {
+                currentSelection = 0;
+            }
             displayFiles(items, currentSelection, copiedItemPath, movingItemPath);
         }
 
@@ -372,7 +397,43 @@ int main() {
         }
 
         else if (input == 's') { // search
+            std::cout << "\033c";
+            
+            std::string item_name;
+            std::cout << "Search files |\n";
+            std::cout << "-------------|\n";
+            std::cout << "Enter file name: ";
+            std::cin >> item_name;
 
+            std::vector<std::string> results;
+
+            searchFile("/home", item_name, results); 
+
+            if (!results.empty()) {
+                std::cout << "\n\nFile(s) found:\n";
+                for (const auto& file : results) {
+                    std::cout << file << "\n"; 
+                }
+            } else {
+                std::cout << "\n\nFile '" << item_name << "' not found :(\n";
+            }
+
+            std::cout << "\nPress " << "\033[0;1m" << "Backspace" << "\033[0m" << " to quit search: ";
+            char tempInput;
+            while (true) {
+                std::cin >> tempInput;
+                if (tempInput == 127) {
+                    break;
+                }
+            }
+
+            displayFiles(items, currentSelection, copiedItemPath, movingItemPath);
+        }
+
+        else if (input == 9){ // Tab
+            std::cout << "\033c";
+            start_screen();
+            displayFiles(items, currentSelection, copiedItemPath, movingItemPath);
         }
 
     }
@@ -383,36 +444,64 @@ int main() {
 
 void start_screen() {
     std::cout << "Navigation\n";
-    std::cout << "--------------------------------------\n";
-    std::cout << "↓ ↑       |navigate through the items|\n";
-    std::cout << "----------|--------------------------|\n";
-    std::cout << "Enter     |enter dir                 |\n";
-    std::cout << "----------|--------------------------|\n";
+    std::cout << "======================================\n";
+    std::cout << "Tab       |show options              |\n";
+    std::cout << "----------|--------------------------|" << "\033[32m" << "                [][][]  [][][]  []      [][][]                            "<< "\033[0m\n";
+    std::cout << "↓ ↑       |navigate through the items|" << "\033[32m" << "                []        []    []      []                                "<< "\033[0m\n";
+    std::cout << "----------|--------------------------|" << "\033[32m" << "                [][]      []    []      [][][]                            "<< "\033[0m\n";
+    std::cout << "Enter     |enter dir                 |" << "\033[32m" << "                []        []    []      []                                "<< "\033[0m\n";
+    std::cout << "----------|--------------------------|" << "\033[32m" << "                []      [][][]  [][][]  [][][]                            "<< "\033[0m\n";
     std::cout << "Backspace |back to previous dir      |\n";
     std::cout << "----------|--------------------------|\n";
-    std::cout << "q         |quit                      |\n";
-    std::cout << "--------------------------------------\n\n";
-    std::cout << "Edit\n";
-    std::cout << "--------------------------------------\n";
+    std::cout << "q         |quit                      |" << "\033[32m" << "                []  []    []    []  []    []    [][][]  [][][]  [][][]    "<< "\033[0m\n";
+    std::cout << "======================================" << "\033[32m" << "                [[][]]   [][]   []] []   [][]   []      []      []  []    "<< "\033[0m\n";
+    std::cout << "                                      " << "\033[32m" << "                [][][]  []  []  [][][]  []  []  [] [[]  [][]    [][][]    "<< "\033[0m\n";
+    std::cout << "Edit                                  " << "\033[32m" << "                []  []  [][][]  [] [[]  [][][]  []  []  []      [] []     "<< "\033[0m\n";
+    std::cout << "======================================" << "\033[32m" << "                []  []  []  []  []  []  []  []  [][][]  [][][]  []  []    "<< "\033[0m\n";
     std::cout << "+         |create item in current dir|\n";
     std::cout << "----------|--------------------------|\n";
-    std::cout << "-         |delete selected item      |\n";
-    std::cout << "----------|--------------------------|\n";
-    std::cout << "r         |rename selected item      |\n";
-    std::cout << "--------------------------------------\n\n";
-    std::cout << "Manipulations\n";
-    std::cout << "--------------------------------------\n";
-    std::cout << "c         |copy selected item        |\n";
-    std::cout << "----------|--------------------------|\n";
-    std::cout << "v         |paste copied item         |\n";
-    std::cout << "----------|--------------------------|\n";
-    std::cout << "m         |move selected item        |\n";
-    std::cout << "--------------------------------------\n\n";
-    std::cout << "Press Enter to continue: ";
+    std::cout << "-         |delete selected item      |" << "\033[33;2m" << "                 [[][][][][]                                            "<< "\033[0m\n";
+    std::cout << "----------|--------------------------|" << "\033[33;2m" << "                []          [][]                                        "<< "\033[0m\n";
+    std::cout << "r         |rename selected item      |" << "\033[33;2m" << "                []              [][][][][][][][][][][][]]               "<< "\033[0m\n";                
+    std::cout << "======================================" << "\033[33;2m" << "                []                                      []              "<< "\033[0m\n";
+    std::cout << "                                      " << "\033[33;2m" << "                [][][][][][][][][][][][][][][][][][][][][]              "<< "\033[0m\n";
+    std::cout << "Manipulations                         " << "\033[33;2m" << "                []                                      []              "<< "\033[0m\n";
+    std::cout << "======================================" << "\033[33;2m" << "                []                                      []              "<< "\033[0m\n";
+    std::cout << "c         |copy selected item        |" << "\033[33;2m" << "                []                                      []              "<< "\033[0m\n";
+    std::cout << "----------|--------------------------|" << "\033[33;2m" << "                []                                      []              "<< "\033[0m\n";
+    std::cout << "v         |paste copied item         |" << "\033[33;2m" << "                []                                      []              "<< "\033[0m\n";
+    std::cout << "----------|--------------------------|" << "\033[33;2m" << "                []                                      []              "<< "\033[0m\n";
+    std::cout << "m         |move selected item        |" << "\033[33;2m" << "                []                                      []              "<< "\033[0m\n";
+    std::cout << "----------|--------------------------|" << "\033[33;2m" << "                []                                      []              "<< "\033[0m\n";
+    std::cout << "s         |file search               |" << "\033[33;2m" << "                []                                      []              "<< "\033[0m\n";
+    std::cout << "======================================" << "\033[33;2m" << "                 [[][][][][][][][][][][][][][][][][][][]]               "<< "\033[0m\n";
+
+    std::cout << "\nPress " << "\033[0;1m" << "Enter" << "\033[0m" << " to continue: ";
     std::cin.ignore();
 }
 
-// search
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+    // std::cout << "[][][]  [][][]  []      [][][]                            \n";
+    // std::cout << "[]        []    []      []                                \n";
+    // std::cout << "[][]      []    []      [][][]                            \n";
+    // std::cout << "[]        []    []      []                                \n";
+    // std::cout << "[]      [][][]  [][][]  [][][]                            \n\n";
+
+    // std::cout << "[]  []    []    []  []    []    [][][]  [][][]  [][][]    \n";
+    // std::cout << "[]][[]   ]  [   []] []   ]  [   []      []      []  []    \n";
+    // std::cout << "[][][]  [][][]  [][][]  [][][]  [] [[]  [][]    [][][]    \n";
+    // std::cout << "[]  []  []  []  [] [[]  []  []  []  []  []      [] [      \n";
+    // std::cout << "[]  []  []  []  []  []  []  []  [][][]  [][][]  []  []    \n\n";
