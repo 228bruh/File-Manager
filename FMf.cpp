@@ -99,72 +99,69 @@ void displayFiles(const std::vector<Item>& items, int currentItem, std::string c
             std::string type_str;
             switch (items[i].type) {
                 case Item::Type::Folder:
-                    type_str = "Folder";
+                    type_str = "   \033[33m┌─┐___\n\033[32m->\033[33m │  _  │  \033[32m" + items[i].name + "\n\033[33m   └─┴─┴─┘";
                     break;
                 case Item::Type::Document:
-                    type_str = "Document";
+                    type_str = "   ┌───┐\n\033[32m->\033[0m │~~~│  \033[32m" + items[i].name + "\n\033[0m   └───┘";
                     break;
                 case Item::Type::Image:
-                    type_str = "Image";
+                    type_str = "   \033[34m┌───┐\n\033[32m->\033[34m │◠˚✧│  \033[32m" + items[i].name + "\n\033[34m   └───┘"; 
                     break;
                 case Item::Type::Audio:
-                    type_str = "Audio";
+                    type_str = "   \033[90m┌───┐\n\033[32m->\033[90m │ ♫ │  \033[32m" + items[i].name + "\n\033[90m   └───┘";
                     break;
                 case Item::Type::Video:
-                    type_str = "Video";
+                    type_str = "   \033[31m┌───┐\n\033[32m->\033[31m │ ▶ │  \033[32m" + items[i].name + "\n\033[31m   └───┘";
                     break;
                 case Item::Type::Archive:
-                    type_str = "Archive";
+                    type_str = "   \033[33;2m┌───┐\n\033[0m\033[32m->\033[33;2m │ ↓ │  \033[0m\033[32m" + items[i].name + "\n\033[33;2m   └───┘\033[0m";
                     break;
                 case Item::Type::Other:
-                    type_str = "Other";
+                    type_str = "   ┌───┐\n\033[32m->\033[0m │ ⚙ │  \033[32m" + items[i].name + "\n\033[0m   └───┘";
                     break;
             }
-            std::cout << "\033[32m";
-            std::cout << "-> ";
-            std::cout << std::setw(35) << std::left << items[i].name;
-            std::cout << std::setw(10) << std::left << type_str;
+
+            std::cout << type_str;
+
             if (items[i].is_folder) {
                 std::cout << "\033[0m\n";
             } else {
-                std::cout << std::setw(5) << std::left << items[i].size << " MB" << "\033[0m\n";
-            }
-            std::cout << "\n";
+                std::cout << "  \033[32m" << items[i].size << " MB\033[0m\n";
+            }    
 
         } else {
             std::string type_str;
             switch (items[i].type) {
                 case Item::Type::Folder:
-                    type_str = "Folder";
+                    type_str = "\033[33m     ┌─┐___\n     │  _  │  \033[0m" + items[i].name +"\n\033[33m     └─┴─┴─┘";
                     break;
                 case Item::Type::Document:
-                    type_str = "Document";
+                    type_str = "     ┌───┐\n     │~~~│  " + items[i].name + "\n     └───┘  "; 
                     break;
                 case Item::Type::Image:
-                    type_str = "Image";
+                    type_str = "\033[34m     ┌───┐\n     │◠˚✧│  \033[0m" + items[i].name +"\n\033[34m     └───┘";
                     break;
                 case Item::Type::Audio:
-                    type_str = "Audio";
+                    type_str = "\033[90m     ┌───┐\n     │ ♫ │  \033[0m" + items[i].name +"\n\033[90m     └───┘";
                     break;
                 case Item::Type::Video:
-                    type_str = "Video";
+                    type_str = "\033[31m     ┌───┐\n     │ ▶ │  \033[0m" + items[i].name +"\n\033[31m     └───┘";
                     break;
                 case Item::Type::Archive:
-                    type_str = "Archive";
+                    type_str = "\033[33;2m     ┌───┐\n     │ ↓ │  \033[0m" + items[i].name +"\n\033[33;2m     └───┘";
                     break;
                 case Item::Type::Other:
-                    type_str = "Other";
+                    type_str = "     ┌───┐\n     │ ⚙ │  " + items[i].name + "\n     └───┘  ";
                     break;
             }
-            std::cout << "   ";
-            std::cout << std::setw(35) << std::left << items[i].name;
-            std::cout << std::setw(10) << std::left << type_str;
+
+            std::cout << type_str;
+
             if (items[i].is_folder) {
-                std::cout << "\n";
+                std::cout << "\033[0m\n";
             } else {
-                std::cout << std::setw(5) << std::left << items[i].size << " MB\n";
-            }
-            std::cout << "\n";
+                std::cout << "  \033[0m" << items[i].size << " MB\n";
+            }  
         }
     }
 
@@ -494,13 +491,13 @@ void start_screen() {
     std::cout << "======================================\n";
     std::cout << "\n";
     std::cout << "Manipulations\n";
-    std::cout << "======================================\n";
-    std::cout << "\033[0;1mc\033[0m         |copy selected item        |\n";
-    std::cout << "----------|--------------------------|\n";
+    std::cout << "======================================           \033[33m┌─┐___\033[0m                  ┌───┐                 \033[33;2m┌───┐\033[0m\n";
+    std::cout << "\033[0;1mc\033[0m         |copy selected item        |           \033[33m│  _  │\033[0m folder          │~~~│ document        \033[33;2m│ ↓ │\033[0m archive\n";
+    std::cout << "----------|--------------------------|           \033[33m└─┴─┴─┘\033[0m                 └───┘                 \033[33;2m└───┘\n";
     std::cout << "\033[0;1mv\033[0m         |paste copied item         |\n";
-    std::cout << "----------|--------------------------|\n";
-    std::cout << "\033[0;1mm\033[0m         |move selected item        |\n";
-    std::cout << "----------|--------------------------|\n";
+    std::cout << "----------|--------------------------|           \033[34m┌───┐\033[31m                   ┌───┐                 \033[90m┌───┐\033[0m                 ┌───┐\n";
+    std::cout << "\033[0;1mm\033[0m         |move selected item        |           \033[34m│◠˚✧│\033[0m image             \033[31m│ ▶ │ video\033[0m           \033[90m│ ♫ │\033[0m audio           │ ⚙ │ other\n";
+    std::cout << "----------|--------------------------|           \033[34m└───┘\033[31m                   └───┘                 \033[90m└───┘\033[0m                 └───┘\n";
     std::cout << "\033[0;1ms\033[0m         |file search               |\n";
     std::cout << "======================================\n";
 
@@ -545,14 +542,73 @@ void start_screen() {
 |      |
 |______|
 
+|¯¯\___
+│      │
+└──────┘
+
+┌─┐___
+│     │
+└─────┘
+
+
 
 |¯¯¯¯|
-|    |
+|~~~~|
 |____|
 
- /¯¯¯\
-|¯¯¯¯¯|
-|_____|
+┌───┐
+│~~~│
+└───┘
+
+
+
+ /¯¯¯¯/|
+|¯¯¯¯| |
+|____|/   
+
+
+
+
+
+
+┘ ┌ └ ┐ ┴ ┬ ├ ─ ┼ ┤ │ ¯ 
+
+
+
+folder
+┌─┐___
+│  _  │ 
+└─┴─┴─┘
+
+document
+┌───┐
+│~~~│
+└───┘
+
+archive
+┌───┐
+│↓↓↓│
+└───┘
+
+image
+┌───┐
+│◠˚✧|
+└───┘
+
+video
+┌───┐
+│ ▶ │
+└───┘
+
+audio
+┌───┐
+│ ♫ │
+└───┘
+
+other
+┌───┐
+│ ⚙ │
+└───┘
 
 */
 
