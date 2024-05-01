@@ -59,13 +59,12 @@ void createItem(const std::string& path, bool isFolder);
 void searchFile(const char* dir_name, const std::string& item_name, std::vector<std::string>& results);
 
 int main() {
-    start_screen();
 
     std::string start_dir = "//home";
     std::vector<Item> items = set_list_of_current_dir(start_dir);
 
     int currentSelection = 0;
-    
+
     std::string copiedItemPath;
     std::string movingItemPath;
     bool isMoving = false;
@@ -75,6 +74,8 @@ int main() {
     newt = oldt;
     newt.c_lflag &= ~(ICANON | ECHO);
     tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+
+    start_screen();
 
     displayFiles(items, currentSelection, copiedItemPath, movingItemPath, start_dir);
 
@@ -129,7 +130,7 @@ int main() {
             std::cout << "\033c";
             std::cout << " \033[0;1m" << start_dir << "  \033[0m|\n";
             for(int i = 0; i < start_dir.size() + 3; i++) {
-                std::cout << "_";            // —
+                std::cout << "_";
             }
             std::cout << "|\n\n";
 
@@ -151,7 +152,7 @@ int main() {
         
             struct stat buffer;
             while (stat(itemPath.c_str(), &buffer) == 0) {
-                std::cout << "\n\nItem with the same name '" << itemName << "' already exists in this directory\n";
+                std::cout << "\n\nItem with the same name '\033[0;1m" << itemName << "\033[0m' already exists in this directory\n";
                 std::cout << "Enter name: ";
                 
                 tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
@@ -179,7 +180,7 @@ int main() {
 
         else if (!items.empty() && input == '-') { // delete item
             std::string path = start_dir + "/" + items[currentSelection].name;
-
+            
             confirmAndDelete(path);
 
             items = set_list_of_current_dir(start_dir); 
@@ -246,7 +247,7 @@ int main() {
             displayFiles(items, currentSelection, copiedItemPath, movingItemPath, start_dir);
         }
 
-        else if (input == 'v' && copiedItemPath != "") { // paste
+        else if (copiedItemPath != "" && input == 'v') { // paste
             std::string command = "cp -r '" + copiedItemPath + "' '" + start_dir + "'";
             system(command.c_str());
 
@@ -267,7 +268,7 @@ int main() {
                 items = set_list_of_current_dir(start_dir);
                 displayFiles(items, currentSelection, copiedItemPath, movingItemPath, start_dir);
                 isMoving = false;
-            } else {
+            } else if (!items.empty()){
                 movingItemPath = start_dir + "/" + items[currentSelection].name;
                 displayFiles(items, currentSelection, copiedItemPath, movingItemPath, start_dir);
                 isMoving = true;
@@ -328,7 +329,6 @@ int main() {
     tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
     return 0;
 }
-
 
 void start_screen() {
     std::cout << "Navigation                            \033[32m            ________  ______  __        ________                                                 \033[0m\n";
@@ -414,8 +414,8 @@ std::vector<Item> set_list_of_current_dir(std::string start_dir) {
 
 void displayFiles(const std::vector<Item>& items, int currentItem, std::string copiedItemPath, std::string movingItemPath, std::string start_dir) {
     std::cout << "\033c";
-    std::cout << " \033[0;1m" << start_dir << "  \033[0m|\n";
-    for(int i = 0; i < start_dir.size() + 3; i++) {
+    std::cout << " \033[0;1m" << start_dir << "  \033[0m|\n";   // ─┐       
+    for(int i = 0; i < start_dir.size() + 3; i++) {             //  └─
         std::cout << "_";
     }
     std::cout << "|\n\n";
@@ -527,19 +527,21 @@ bool removeItem(const std::string& path) {
     return true;
 }
 
-void confirmAndDelete(const std::string& path) {
-    std::cout << "\n\nAre you sure you want to delete this item: \033[0;1m" << path << "\033[0m? (y/n)\n";
+void confirmAndDelete(const std::string& path) { 
+    std::cout << "\n\nAre you sure you want to delete this item: \033[0;1m" << path << "\033[0m? (y/n)";
     char response;
     std::cin >> response;
 
     if (response == 'y' || response == 'Y') {
+   
         if (removeItem(path)) {
-            std::cout << "Item successfully deleted.\n";
+            std::cout << "\nItem successfully deleted.\n";
         } else {
-            std::cout << "Failed to delete item.\n";
+            std::cout << "\nFailed to delete item.\n";
         }
+
     } else {
-        std::cout << "Deletion canceled.\n";
+        std::cout << "\nDeletion canceled.\n";
     }
 
     std::cout << "\nPress " << "\033[0;1m" << "any key" << "\033[0m" << " to continue: ";
