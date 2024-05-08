@@ -1,4 +1,6 @@
-#include "/home/kirill/VS_Code_Files/Git/File-Manager/header/functions.h"
+#include "/home/kirill/VS_Code_Files/Git/File-Manager/header/class_Item.h"
+#include "/home/kirill/VS_Code_Files/Git/File-Manager/header/graphic_Functions.h"
+#include "/home/kirill/VS_Code_Files/Git/File-Manager/header/options.h" 
 
 struct termios oldt, newt;
 
