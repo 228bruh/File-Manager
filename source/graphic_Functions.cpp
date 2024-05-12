@@ -1,6 +1,7 @@
 #include "/home/kirill/VS_Code_Files/Git/File-Manager/header/graphic_Functions.h"
 
 void start_screen() {
+    std::cout << "\033c";
     std::cout << "Navigation                            \033[32m            ________  ______  __        ________                                                 \033[0m\n";
     std::cout << "======================================\033[32m           |        \\|      \\|  \\      |        \\                                            \033[0m\n";
     std::cout << "\033[0;1mTab\033[0m       |show options              |\033[32m           | $$$$$$$$ \\$$$$$$| $$      | $$$$$$$$                                               \033[0m\n";

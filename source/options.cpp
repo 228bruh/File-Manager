@@ -42,7 +42,7 @@ bool removeItem(const std::string& path) {
     std::string rmCommand = "rm -r '" + path + "'";
 
     if (system(rmCommand.c_str()) != 0) {
-        std::cerr << "Error removing directory: " << path << std::endl;
+        std::cerr << "Error removing directory: " << path << "\n";
         return false;
     }
 
@@ -50,23 +50,23 @@ bool removeItem(const std::string& path) {
 }
 
 void confirmAndDelete(const std::string& path) { 
-    std::cout << "\n\nAre you sure you want to delete this item: \033[0;1m" << path << "\033[0m? (y/n)";
+    std::cout << "\n\nAre you sure you want to delete this item: \033[0;1m" << path << "\033[0m? [Y/n]";
     char response;
     std::cin >> response;
 
     if (response == 'y' || response == 'Y') {
    
         if (removeItem(path)) {
-            std::cout << "\nItem successfully deleted.\n";
+            std::cout << "\nItem successfully deleted\n";
         } else {
-            std::cout << "\nFailed to delete item.\n";
+            std::cout << "\nFailed to delete item\n";
         }
 
     } else {
-        std::cout << "\nDeletion canceled.\n";
+        std::cout << "\nDeletion canceled\n";
     }
 
-    std::cout << "\nPress " << "\033[0;1m" << "any key" << "\033[0m" << " to continue: ";
+    std::cout << "\nPress \033[0;1mEnter\033[0m to continue: ";
     std::cin.ignore();
 }
 
@@ -147,5 +147,7 @@ void searchMenu() {
         std::cout << "\n\nFile '\033[0;1m" << item_name << "\033[0m' not found :(\n";
     }
 
-    std::cout << "\nPress " << "\033[0;1m" << "Backspace" << "\033[0m" << " to quit search: ";
+    std::cout << "\nPress \033[0;1mEnter\033[0m to continue: ";
+    std::cin.ignore();
+    std::cin.ignore();
 }

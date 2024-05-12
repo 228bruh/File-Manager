@@ -5,7 +5,6 @@
 struct termios oldt, newt;
 
 int main() {
-
     std::string start_dir = "//home";
     std::vector<Item> items = set_list_of_current_dir(start_dir);
 
@@ -16,9 +15,7 @@ int main() {
     bool isMoving = false;
 
     disableCanonicInput(oldt, newt);
-
     start_screen();
-
     displayFiles(items, currentSelection, copiedItemPath, movingItemPath, start_dir);
 
     char input;
@@ -135,17 +132,10 @@ int main() {
             enableCanonicInput(oldt);
             searchMenu();
             disableCanonicInput(newt, oldt);
-
-            char ch;
-            do {
-                ch = std::cin.get();
-            } while (ch != 127);
-
             displayFiles(items, currentSelection, copiedItemPath, movingItemPath, start_dir);
         }
 
         else if (input == 9){ // Tab
-            std::cout << "\033c";
             start_screen();
             displayFiles(items, currentSelection, copiedItemPath, movingItemPath, start_dir);
         }
